@@ -43,7 +43,8 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 public class MainActivity extends AppCompatActivity {
     private static final String basePath = Environment.getExternalStorageDirectory() + "/mnist";
-    private static final String mnistTrainUrl = "https://github.com/KANG-FU/On_device_FL_dataset/raw/main/mnist_client2_iid.tar.gz";
+    private static final String mnistTrainUrl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_client2_iid.tar.gz?raw=true";
+
 
     private static final String clientID = "2";
     // the I/O stream for sending and receiving the model

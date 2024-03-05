@@ -70,7 +70,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 public class MainActivity extends AppCompatActivity {
     private static final String basePath = Environment.getExternalStorageDirectory() + "/server";
-    private static final String mnistTesturl = "https://github.com/KANG-FU/On_device_FL_dataset/raw/main/mnist_test.tar.gz";
+    private static final String mnistTesturl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_test.tar.gz?raw=true";
 
     TextView text;
     double targetAccuracy = 0.95;
