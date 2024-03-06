@@ -43,7 +43,12 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 public class MainActivity extends AppCompatActivity {
     private static final String basePath = Environment.getExternalStorageDirectory() + "/mnist";
+
+    //IID
     private static final String mnistTrainUrl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_client2_iid.tar.gz?raw=true";
+
+    //NON IID
+    //private static final String mnistTrainUrl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_client2_non_iid.tar.gz?raw=true";
 
 
     private static final String clientID = "2";
@@ -53,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     double trainTime;
     TextView textTime;
     TextView textAccuracy;
-    static String serverIP = "192.168.29.58";
+    static String serverIP = "192.168.29.99";
     String trainDataset = "client2_mnist_iid_batch";
             
     @Override

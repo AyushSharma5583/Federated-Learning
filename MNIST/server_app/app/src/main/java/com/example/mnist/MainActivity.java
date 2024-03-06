@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
             super.onPreExecute();
             ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
             bar.setVisibility(View.INVISIBLE);
-            text.setText("Generate the initial model and send to clients...");
+            text.setText("Generated the initial model and sent to clients...");
         }
 
         // This is our main background thread for training the model and uploading the model
@@ -260,7 +260,7 @@ public class MainActivity extends AppCompatActivity {
             //Hide the progress bar now that we are finished
             ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
             bar.setVisibility(View.INVISIBLE);
-            text.setText("The accuracy reach the target "+ targetAccuracy + "\n" + "It has taken " +  trainNum + "times of training iteration" );
+            text.setText("The accuracy reach the target "+ targetAccuracy + "\n" + "It has taken " +  trainNum + " times of training iteration" );
 
         }
 
