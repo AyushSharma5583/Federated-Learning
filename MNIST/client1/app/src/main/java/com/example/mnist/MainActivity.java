@@ -44,11 +44,11 @@ import au.com.bytecode.opencsv.CSVWriter;
 public class MainActivity extends AppCompatActivity {
     private static final String basePath = Environment.getExternalStorageDirectory() + "/mnist";
 
-    //IID
+    //IID Distribution
     private static final String mnistTrainUrl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_client1_iid.tar.gz?raw=true";
 
 
-    //Non IID
+    //Non-IID Distribution
     //private static final String mnistTrainUrl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_client1_non_iid.tar.gz?raw=true";
     private static final String clientID = "1";
     // the I/O stream for sending and receiving the model
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
             super.onPreExecute();
             ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
             bar.setVisibility(View.INVISIBLE);
-            textTime.setText("Start training...");
+            textTime.setText("Started training...");
         }
 
         // This is our main background thread for training the model and uploading the model
