@@ -69,7 +69,9 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static final String basePath = Environment.getExternalStorageDirectory() + "/server";
+    //private static final String basePath = Environment.getExternalStorageDirectory() + "/server";
+
+
     private static final String mnistTesturl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_test.tar.gz?raw=true";
 
     TextView text;
@@ -84,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
         Button button = (Button) findViewById(R.id.button);
         text = (TextView) findViewById(R.id.textView2);
-
+        String basePath = getCacheDir().getAbsolutePath() + "/server";
         File serverDir = new File(basePath);
         if (!serverDir.exists()) {
             serverDir.mkdirs();
@@ -116,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
         // This is our main background thread for training the model and uploading the model
         @Override
         protected String doInBackground(String... params) {
+            String basePath = getCacheDir().getAbsolutePath() + "/server";
             final int numClient = 2;
             int numConnectedClient = 0;
             double accuracy = 0;
@@ -272,6 +275,8 @@ public class MainActivity extends AppCompatActivity {
             meanUpdaterState = modelLoad_cID_1.updaterState().addi(modelLoad_cID_2.updaterState()).divi(2);
             MultiLayerNetwork updatedModel = new MultiLayerNetwork(modelLoad_cID_1.getLayerWiseConfigurations(), meanCoefficient);
             updatedModel.getUpdater().setStateViewArray(updatedModel, meanUpdaterState, false);
+
+            String basePath = getCacheDir().getAbsolutePath() + "/server";
             ModelSerializer.writeModel(updatedModel, new File(basePath + "/updatedModel.zip"), true);
             System.out.println("Model has been updated in the server");
         }
@@ -283,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
         final int numColumns = 28;
         int channels = 1; // single channel for grayscale images
         int outputNum = 10; // number of output classes
-        int batchSize = 64; // batch size for each epoch
+        int batchSize = 64; // batch size for each epochint batchSize = 64;
         int rngSeed = 1234; // random number seed for reproducibility
         Random randNumGen = new Random(rngSeed);
 
@@ -351,6 +356,8 @@ public class MainActivity extends AppCompatActivity {
             MultiLayerNetwork myNetwork = new MultiLayerNetwork(conf);
             myNetwork.init();
             myNetwork.setListeners(new ScoreIterationListener(10));
+
+            String basePath = getCacheDir().getAbsolutePath() + "/server";
             ModelSerializer.writeModel(myNetwork,  new File(basePath + "/updatedModel.zip"), false);
             System.out.println("The initial model has been generated!");
         }
@@ -359,6 +366,7 @@ public class MainActivity extends AppCompatActivity {
         private Evaluation modelEval(MultiLayerNetwork myNetwork) throws IOException, InterruptedException {
 
            // vectorization of test data
+            String basePath = getCacheDir().getAbsolutePath() + "/server";
             File testData = new File(basePath + "/mnist_test/mnist_test");
             ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
             FileSplit testSplit = new FileSplit(testData, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
@@ -419,6 +427,7 @@ public class MainActivity extends AppCompatActivity {
                 int fileLength = din.readInt();
                 byte[] byteArray = new byte[fileLength];					//creating byteArray with length same as file length
                 BufferedInputStream bis = new BufferedInputStream(din);
+                String basePath = getCacheDir().getAbsolutePath() + "/server";
                 File file = new File( basePath + "/" + name );
                 //fileFoundFlag is a Flag which denotes the file is present or absent from the Server directory, is present int 0 is sent, else 1
                 int fileFoundFlag = din.readInt();
@@ -460,6 +469,7 @@ public class MainActivity extends AppCompatActivity {
                 din = new DataInputStream(socket.getInputStream());
                 dout = new DataOutputStream(socket.getOutputStream());
                 System.out.println("model sending ...");
+                String basePath = getCacheDir().getAbsolutePath() + "/server";
                 File initModel = new File( basePath + "/updatedModel.zip");
                 sendFile(initModel);
                 System.out.println("model sent");

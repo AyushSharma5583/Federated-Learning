@@ -1,5 +1,6 @@
 package com.example.mnist;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -42,7 +43,8 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static final String basePath = Environment.getExternalStorageDirectory() + "/mnist";
+    //private static final String basePath = Environment.getExternalStorageDirectory() + "/mnist";
+
 
     //IID Distribution
     private static final String mnistTrainUrl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_client2_iid.tar.gz?raw=true";
@@ -58,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     double trainTime;
     TextView textTime;
     TextView textAccuracy;
-    static String serverIP = "192.168.29.99";
+    static String serverIP = "192.168.29.29";
     String trainDataset = "client2_mnist_iid_batch";
             
     @Override
@@ -96,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
         // This is our main background thread for training the model and uploading the model
         @Override
         protected String doInBackground(String... params) {
+            String basePath = getCacheDir().getAbsolutePath() + "/mnist";
             try {
                 // download the dataset from the Internet
                 if (!new File(basePath + "/mnist_client2_iid").exists()) {
@@ -134,11 +137,11 @@ public class MainActivity extends AppCompatActivity {
                 // First it will receive the model from the server and then load the model to train it using its own dataset
                 // After that, send the trained model back to the server and waiting for the new model from the server
                 while(true){
-                    receiveModel();
+                    receiveModel(MainActivity.this);
                     String updatedModelPath = basePath + "/updatedModel.zip";
                     MultiLayerNetwork modelLoad = ModelSerializer.restoreMultiLayerNetwork(updatedModelPath);
                     trainTime = model.modelTrain(modelLoad,mnistTrain);
-                    sendModel();
+                    sendModel(MainActivity.this);
                     num = num + 1;
                     if (receiveSignal() == 1){
                         Thread.sleep(5000);
@@ -200,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
         private DataSetIterator loadTrainData() throws IOException, InterruptedException {
 
 //            // vectorization of train data
+            String basePath = getCacheDir().getAbsolutePath() + "/mnist";
             File trainData = new File(basePath + "/mnist_client2_iid" );
             FileSplit trainSplit = new FileSplit(trainData, NativeImageLoader.ALLOWED_FORMATS, randNumGen);
             ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator(); // parent path as the image label
@@ -228,6 +232,7 @@ public class MainActivity extends AppCompatActivity {
 //            myNetwork.fit(mnistTrain, numEpochs);
             trainTime = (System.nanoTime()-startTime)/1000000000;
             System.out.println("The time for training is "+ trainTime + "s");
+            String basePath = getCacheDir().getAbsolutePath() + "/mnist";
             ModelSerializer.writeModel(myNetwork,  new File(basePath+"/localModel_cID_" + clientID +".zip" ), true);
             return trainTime;
         }
@@ -235,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // This is function for receiving the model from the server
-    private static void receiveModel() throws IOException {
+    private static void receiveModel(Context context) throws IOException {
         System.out.println("Connecting....");
         Socket socket = new Socket(serverIP, 5000);
         System.out.println("Connected!");
@@ -243,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
         din = new DataInputStream(socket.getInputStream());
         dout = new DataOutputStream(socket.getOutputStream());
         System.out.println("Receiving model from server...");
-        receiveFile();
+        receiveFile(context);
         System.out.println("Model Received!");
 
         System.out.println("Closing socket.");
@@ -251,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // This is function for sending the model to the server
-    private static void sendModel() throws IOException {
+    private static void sendModel(Context context) throws IOException {
         System.out.println("Connecting....");
         Socket socket = new Socket(serverIP, 5000);
         System.out.println("Connected!");
@@ -259,6 +264,7 @@ public class MainActivity extends AppCompatActivity {
         din = new DataInputStream(socket.getInputStream());
         dout = new DataOutputStream(socket.getOutputStream());
 
+        String basePath = context.getCacheDir().getAbsolutePath() + "/mnist";
         File fileSent = new File(basePath+"/localModel_cID_" + clientID +".zip" );
         System.out.println("Trained Model sending to server...");
         sendFile_from_client(fileSent);			//the file if present, is sent over the network
@@ -317,12 +323,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // The function for receiving files using sockets
-    private static void receiveFile() {
+    private static void receiveFile(Context context) {
         int bytesRead = 0, current = 0;
         try {
             int fileLength = din.readInt();
             byte[] byteArray = new byte[fileLength];					//creating byteArray with length same as file length
             BufferedInputStream bis = new BufferedInputStream(din);
+            String basePath = context.getCacheDir().getAbsolutePath() + "/mnist";
             File file = new File(basePath+"/updatedModel.zip");
             //fileFoundFlag is a Flag which denotes the file is present or absent from the Server directory, is present int 0 is sent, else 1
             int fileFoundFlag = din.readInt();
