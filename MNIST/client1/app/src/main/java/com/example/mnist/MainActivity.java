@@ -38,6 +38,7 @@ import java.net.Socket;
 import java.util.Random;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import java.nio.file.Files;
 
 //import android.support.v7.app.AppCompatActivity;
 
@@ -59,8 +60,10 @@ public class MainActivity extends AppCompatActivity {
     double trainTime;
     TextView textTime;
     TextView textAccuracy;
-    static String serverIP = "192.168.29.29";
+    static String serverIP = "192.168.100.3";
     String trainDataset = "client1_mnist_iid_batch";
+
+    private static final int ENCRYPTION_KEY = 3;
             
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -140,6 +143,10 @@ public class MainActivity extends AppCompatActivity {
                     String updatedModelPath = basePath + "/updatedModel.zip";
                     MultiLayerNetwork modelLoad = ModelSerializer.restoreMultiLayerNetwork(updatedModelPath);
                     trainTime = model.modelTrain(modelLoad,mnistTrain);
+
+                    // Encryption
+                    encryptModelFile(new File(basePath + "/localModel_cID_" + clientID + ".zip"));
+
                     sendModel(MainActivity.this);
                     num = num + 1;
                     if (receiveSignal() == 1){
@@ -215,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        private double modelTrain(MultiLayerNetwork myNetwork, DataSetIterator mnistTrain) throws IOException {
+        private double modelTrain(MultiLayerNetwork myNetwork, DataSetIterator mnistTrain) throws Exception {
             String basePath = getCacheDir().getAbsolutePath() + "/mnist";
             Log.d("train model", "Train model....");
 
@@ -228,10 +235,33 @@ public class MainActivity extends AppCompatActivity {
             trainTime = (System.nanoTime()-startTime)/1000000000;
             System.out.println("The time for training is "+ trainTime + "s");
             ModelSerializer.writeModel(myNetwork,  new File(basePath+"/localModel_cID_" + clientID +".zip" ), true);
+
             return trainTime;
         }
 
     }
+
+
+
+    public void encryptModelFile(File modelFile) throws Exception {
+        // Read model file content
+        byte[] modelData = Files.readAllBytes(modelFile.toPath());
+
+        // Encrypt each byte using Caesar cipher
+        byte[] encryptedData = new byte[modelData.length];
+        for (int i = 0; i < modelData.length; i++) {
+            byte originalByte = modelData[i];
+            int shiftedValue = (originalByte + ENCRYPTION_KEY) % 256;  // Wrap around for non-alphanumeric characters
+            encryptedData[i] = (byte) shiftedValue;
+        }
+
+        // Overwrite model file with encrypted data
+        Files.write(modelFile.toPath(), encryptedData);
+    }
+
+
+
+
 
     // This is function for receiving the model from the server
     private static void receiveModel(Context context) throws IOException {
