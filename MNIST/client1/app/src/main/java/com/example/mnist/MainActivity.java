@@ -35,10 +35,20 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Random;
 
 import au.com.bytecode.opencsv.CSVWriter;
+
 import java.nio.file.Files;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+
 
 //import android.support.v7.app.AppCompatActivity;
 
@@ -63,8 +73,27 @@ public class MainActivity extends AppCompatActivity {
     static String serverIP = "192.168.100.3";
     String trainDataset = "client1_mnist_iid_batch";
 
-    private static final int ENCRYPTION_KEY = 3;
-            
+
+    ///Secret key for Caeser Cipher
+    //private static final int ENCRYPTION_KEY = 3;
+
+
+    ////Secret key for AES-128 ECB and CBC mode
+//    private static final byte[] KEY_VALUE = {
+//            (byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67,
+//            (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef,
+//            (byte) 0xfe, (byte) 0xdc, (byte) 0xba, (byte) 0x98,
+//            (byte) 0x76, (byte) 0x54, (byte) 0x32, (byte) 0x10
+//    };
+
+
+    ////Secret key for AES-256 GCM mode
+    private static final byte[] KEY_VALUE = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
+
+
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -161,6 +190,8 @@ public class MainActivity extends AppCompatActivity {
                         String[] data={String.valueOf(num),String.valueOf(trainTime), String.valueOf(currentTime)};
                         write.writeNext(data);
                         write.close();
+
+
                         break;
                     }
                 }
@@ -243,21 +274,132 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+//// Model Encryption using Caeser Cipher
+//    public void encryptModelFile(File modelFile) throws Exception {
+//        // Read model file content
+//        byte[] modelData = Files.readAllBytes(modelFile.toPath());
+//
+//        // Encrypt each byte using Caesar cipher
+//        byte[] encryptedData = new byte[modelData.length];
+//        for (int i = 0; i < modelData.length; i++) {
+//            byte originalByte = modelData[i];
+//            int shiftedValue = (originalByte + ENCRYPTION_KEY) % 256;  // Wrap around for non-alphanumeric characters
+//            encryptedData[i] = (byte) shiftedValue;
+//        }
+//
+//        // Overwrite model file with encrypted data
+//        Files.write(modelFile.toPath(), encryptedData);
+//    }
+
+
+
+
+//// Model Encryption using AES-128 ECB mode
+//    public void encryptModelFile(File modelFile) throws Exception {
+//        // Read model file content
+//        byte[] modelData = Files.readAllBytes(modelFile.toPath());
+//
+//        // Generate a SecretKey from the static key (not recommended in production)
+//        // Assuming KEY_VALUE is defined as a byte array with a length of 16 bytes
+//        byte[] key = KEY_VALUE.length == 16 ?
+//                new SecretKeySpec(KEY_VALUE, "AES").getEncoded() : null; // Adjust key size as needed
+//        if (key == null) {
+//            throw new IllegalArgumentException("Static key size must be 16 bytes for AES-128");
+//        }
+//
+//        // Create an AES cipher object
+//        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+//        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"));
+//
+//        // Encrypt the model data
+//        byte[] encryptedData = cipher.doFinal(modelData);
+//
+//        // Overwrite model file with encrypted data
+//        Files.write(modelFile.toPath(), encryptedData);
+//    }
+
+
+
+
+////     Model Encryption using AES-128 CBC mode
+//    public void encryptModelFile(File modelFile) throws Exception {
+//        // Read model file content
+//        byte[] modelData = Files.readAllBytes(modelFile.toPath());
+//
+//        // Generate a SecretKey from the static key (not recommended in production)
+//        // Assuming KEY_VALUE is defined as a byte array with a length of 16 bytes
+//        byte[] key = KEY_VALUE.length == 16 ?
+//                new SecretKeySpec(KEY_VALUE, "AES").getEncoded() : null;
+//        if (key == null) {
+//            throw new IllegalArgumentException("Static key size must be 16 bytes for AES-128");
+//        }
+//
+//        // Generate a random Initialization Vector (IV)
+//        byte[] iv = new byte[16]; // Size should match cipher block size (16 bytes for AES)
+//        new SecureRandom().nextBytes(iv);
+//
+//        // Create an AES cipher object
+//        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+//        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
+//
+//        // Encrypt the model data
+//        byte[] encryptedData = cipher.doFinal(modelData);
+//
+//        // Combine IV and encrypted data (prepend IV to encrypted data)
+//        byte[] encryptedDataWithIv = new byte[iv.length + encryptedData.length];
+//        System.arraycopy(iv, 0, encryptedDataWithIv, 0, iv.length);
+//        System.arraycopy(encryptedData, 0, encryptedDataWithIv, iv.length, encryptedData.length);
+//
+//        // Write encrypted data (including IV) to file
+//        Files.write(modelFile.toPath(), encryptedDataWithIv);
+//    }
+
+
+
+
+
+
+    // Model Encryption using AES-256 GCM mode
     public void encryptModelFile(File modelFile) throws Exception {
         // Read model file content
         byte[] modelData = Files.readAllBytes(modelFile.toPath());
 
-        // Encrypt each byte using Caesar cipher
-        byte[] encryptedData = new byte[modelData.length];
-        for (int i = 0; i < modelData.length; i++) {
-            byte originalByte = modelData[i];
-            int shiftedValue = (originalByte + ENCRYPTION_KEY) % 256;  // Wrap around for non-alphanumeric characters
-            encryptedData[i] = (byte) shiftedValue;
+        // Generate a SecretKey from the static key (not recommended in production)
+        // Assuming KEY_VALUE is defined as a byte array with a length of 32 bytes (required for AES-256)
+        byte[] keyBytes = KEY_VALUE.length == 32 ? KEY_VALUE : null;
+
+        if (keyBytes == null) {
+            throw new IllegalArgumentException("Static key size must be 32 bytes for AES-256 with GCM");
         }
 
-        // Overwrite model file with encrypted data
-        Files.write(modelFile.toPath(), encryptedData);
+        // Create a SecretKeySpec object
+        SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+
+        // Generate a random initialization vector (IV)
+        byte[] iv = new byte[12]; // Size typically 12 bytes for GCM
+        new SecureRandom().nextBytes(iv);
+
+        // Create a GCM Cipher object
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+
+        // Use GCMParameterSpec with the IV
+        GCMParameterSpec spec = new GCMParameterSpec(128, iv); // Tag length in bits (typically 128 for GCM)
+
+        // Initialize cipher for encryption mode with key and IV spec
+        cipher.init(Cipher.ENCRYPT_MODE, key, spec);
+
+        // Encrypt the model data
+        byte[] cipherText = cipher.doFinal(modelData);
+
+        // Combine IV, encrypted data, and tag (prepend IV)
+        byte[] encryptedDataWithIvAndTag = new byte[iv.length + cipherText.length];
+        System.arraycopy(iv, 0, encryptedDataWithIvAndTag, 0, iv.length);
+        System.arraycopy(cipherText, 0, encryptedDataWithIvAndTag, iv.length, cipherText.length);
+
+        // Write the encrypted data back to the model file
+        Files.write(modelFile.toPath(), encryptedDataWithIvAndTag);
     }
+
 
 
 

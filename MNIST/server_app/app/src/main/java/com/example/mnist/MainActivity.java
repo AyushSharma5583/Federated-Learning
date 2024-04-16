@@ -77,6 +77,11 @@ import au.com.bytecode.opencsv.CSVWriter;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 
 public class MainActivity extends AppCompatActivity {
     //private static final String basePath = Environment.getExternalStorageDirectory() + "/server";
@@ -85,11 +90,30 @@ public class MainActivity extends AppCompatActivity {
     private static final String mnistTesturl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_test.tar.gz?raw=true";
 
     TextView text;
-    double targetAccuracy = 0.93;
+    double targetAccuracy = 0.89;
     int trainNum = 0;
     String trainDataset = "mnist_iid";
 
-    private static final int ENCRYPTION_KEY = 3;
+
+
+    ///Secret key for Caeser Cipher
+    //private static final int ENCRYPTION_KEY = 3;
+
+
+    ////Secret key for AES-128 ECB and CBC mode
+//    private static final byte[] KEY_VALUE = {
+//            (byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67,
+//            (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef,
+//            (byte) 0xfe, (byte) 0xdc, (byte) 0xba, (byte) 0x98,
+//            (byte) 0x76, (byte) 0x54, (byte) 0x32, (byte) 0x10
+//    };
+
+
+    ////Secret key for AES-256 GCM mode
+    private static final byte[] KEY_VALUE = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
+
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -288,21 +312,132 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+//// Decryption using Caeser Cipher
+//        public void decryptModelFile(File encryptedModelFile) throws Exception {
+//            // Read encrypted model data
+//            byte[] encryptedData = Files.readAllBytes(encryptedModelFile.toPath());
+//
+//            // Decrypt each byte using Caesar cipher with negative key
+//            byte[] decryptedData = new byte[encryptedData.length];
+//            for (int i = 0; i < encryptedData.length; i++) {
+//                byte originalByte = encryptedData[i];
+//                int shiftedValue = (originalByte - ENCRYPTION_KEY + 256) % 256;  // Handle negative shift values
+//                decryptedData[i] = (byte) shiftedValue;
+//            }
+//
+//            Files.write(encryptedModelFile.toPath(), decryptedData);
+//        }
 
-        public void decryptModelFile(File encryptedModelFile) throws Exception {
-            // Read encrypted model data
-            byte[] encryptedData = Files.readAllBytes(encryptedModelFile.toPath());
 
-            // Decrypt each byte using Caesar cipher with negative key
-            byte[] decryptedData = new byte[encryptedData.length];
-            for (int i = 0; i < encryptedData.length; i++) {
-                byte originalByte = encryptedData[i];
-                int shiftedValue = (originalByte - ENCRYPTION_KEY + 256) % 256;  // Handle negative shift values
-                decryptedData[i] = (byte) shiftedValue;
+
+//// Decryption using AES-128 ECB mode
+
+//        public void decryptModelFile(File encryptedModelFile) throws Exception {
+//            // Read encrypted model data
+//            byte[] encryptedData = Files.readAllBytes(encryptedModelFile.toPath());
+//
+//            // Assuming KEY_VALUE is defined as a byte array with a length of 16 bytes
+//            byte[] key = KEY_VALUE.length == 16 ?
+//                    new SecretKeySpec(KEY_VALUE, "AES").getEncoded() : null;
+//            if (key == null) {
+//                throw new IllegalArgumentException("Static key size must be 16 bytes for AES-128");
+//            }
+//
+//            // Create an AES cipher object
+//            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+//            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"));
+//
+//            // Decrypt the model data
+//            byte[] decryptedData = cipher.doFinal(encryptedData);
+//
+//            // Write decrypted data to file (optional)
+//            // You can write the decrypted data to a new file or use it within your application
+//             Files.write(encryptedModelFile.toPath(), decryptedData);
+//        }
+
+
+
+//// Decryption using AES-128 CBC mode
+
+//
+//        public void decryptModelFile(File encryptedModelFile) throws Exception {
+//            // Read encrypted data (including IV) from file
+//            byte[] encryptedDataWithIv = Files.readAllBytes(encryptedModelFile.toPath());
+//
+//            // Assuming KEY_VALUE is defined as a byte array with a length of 16 bytes
+//            byte[] key = KEY_VALUE.length == 16 ?
+//                    new SecretKeySpec(KEY_VALUE, "AES").getEncoded() : null;
+//            if (key == null) {
+//                throw new IllegalArgumentException("Static key size must be 16 bytes for AES-128");
+//            }
+//
+//            // Extract IV from the beginning of encrypted data
+//            byte[] iv = new byte[16];
+//            System.arraycopy(encryptedDataWithIv, 0, iv, 0, iv.length);
+//
+//            // Extract encrypted data after the IV
+//            byte[] encryptedData = new byte[encryptedDataWithIv.length - iv.length];
+//            System.arraycopy(encryptedDataWithIv, iv.length, encryptedData, 0, encryptedData.length);
+//
+//            // Create an AES cipher object
+//            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+//            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
+//
+//            // Decrypt the model data
+//            byte[] decryptedData = cipher.doFinal(encryptedData);
+//
+//            // Write decrypted data to file (optional)
+//            // You can write the decrypted data to a new file or use it within your application
+//            Files.write(encryptedModelFile.toPath(), decryptedData);
+//        }
+
+
+
+
+    // Decryption using AES-256 GCM mode
+        public void decryptModelFile(File modelFile) throws Exception {
+            // Read the encrypted data from the file
+            byte[] encryptedDataWithIvAndTag = Files.readAllBytes(modelFile.toPath());
+
+            // Split the encrypted data into IV, cipher text, and tag
+            if (encryptedDataWithIvAndTag.length < 12 + 16) {
+                throw new IllegalArgumentException("Invalid encrypted data format");
             }
 
-            Files.write(encryptedModelFile.toPath(), decryptedData);
+            byte[] iv = new byte[12];
+            System.arraycopy(encryptedDataWithIvAndTag, 0, iv, 0, iv.length);
+
+            byte[] cipherTextWithTag = new byte[encryptedDataWithIvAndTag.length - iv.length];
+            System.arraycopy(encryptedDataWithIvAndTag, iv.length, cipherTextWithTag, 0, cipherTextWithTag.length);
+
+            // Generate a SecretKey from the static key (not recommended in production)
+            // Assuming KEY_VALUE is defined as a byte array with a length of 32 bytes (required for AES-256)
+            byte[] keyBytes = KEY_VALUE.length == 32 ? KEY_VALUE : null;
+
+            if (keyBytes == null) {
+                throw new IllegalArgumentException("Static key size must be 32 bytes for AES-256 with GCM");
+            }
+
+            // Create a SecretKeySpec object
+            SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+
+            // Create a GCM Cipher object
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+
+            // Use GCMParameterSpec with the IV
+            GCMParameterSpec spec = new GCMParameterSpec(128, iv); // Tag length in bits (typically 128 for GCM)
+
+            // Initialize cipher for decryption mode with key and IV spec
+            cipher.init(Cipher.DECRYPT_MODE, key, spec);
+
+            // Decrypt the cipher text
+            byte[] decryptedData = cipher.doFinal(cipherTextWithTag);
+
+            // Write the decrypted data back to the model file
+            Files.write(modelFile.toPath(), decryptedData);
         }
+
+
 
 
         // The function for the weight averaging
@@ -320,6 +455,7 @@ public class MainActivity extends AppCompatActivity {
             System.out.println("Model has been updated in the server");
         }
         */
+
 
 
         private void weightAveraging(MultiLayerNetwork modelLoad_cID_1, MultiLayerNetwork modelLoad_cID_2) throws IOException {
