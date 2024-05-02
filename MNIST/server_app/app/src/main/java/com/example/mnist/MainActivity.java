@@ -7,6 +7,7 @@ import android.os.Environment;
 //import android.support.v7.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -14,6 +15,9 @@ import android.widget.TextView;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.Console;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -22,6 +26,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -90,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String mnistTesturl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_test.tar.gz?raw=true";
 
     TextView text;
-    double targetAccuracy = 0.89;
+    double targetAccuracy = 0.90;
     int trainNum = 0;
     String trainDataset = "mnist_iid";
 
@@ -143,6 +151,9 @@ public class MainActivity extends AppCompatActivity {
 
     private class AsyncTaskRunner extends AsyncTask<String, Integer, String> {
         // Runs in UI before background thread is called
+
+        private MultiLayerNetwork updatedModel;
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -246,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
 
                     weightAveraging(modelLoad_cID_1, modelLoad_cID_2);
                     String updatedModelPath = basePath + "/updatedModel.zip";
-                    MultiLayerNetwork updatedModel = ModelSerializer.restoreMultiLayerNetwork(updatedModelPath);
+                    updatedModel = ModelSerializer.restoreMultiLayerNetwork(updatedModelPath);
                     Evaluation eval = model.modelEval(updatedModel);
                     double aggragateAndEvalTime = (System.nanoTime() - startTime) / 1000000000;
                     System.out.println("The time for evalation is " + aggragateAndEvalTime + " s");
@@ -300,6 +311,9 @@ public class MainActivity extends AppCompatActivity {
             super.onProgressUpdate(values);
         }
 
+
+
+        /*
         //This block executes in UI when background thread finishes
         //This is where we update the UI with our classification results
         @Override
@@ -311,6 +325,541 @@ public class MainActivity extends AppCompatActivity {
             text.setText("The accuracy reach the target " + targetAccuracy + "\n" + "It has taken " + trainNum + " times of training iteration");
 
         }
+
+        */
+
+
+
+
+//        @Override
+//        protected void onPostExecute(String result) {
+//            super.onPostExecute(result);
+//            // Hide the progress bar now that we are finished
+//            ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
+//            bar.setVisibility(View.INVISIBLE);
+//            text.setText("The accuracy reach the target " + targetAccuracy + "\n" + "It has taken " + trainNum + " times of training iteration");
+//
+//            Button inferenceButton = findViewById(R.id.inferenceButton);
+//
+//            // Make the inference button visible after training
+//            inferenceButton.setVisibility(View.VISIBLE);
+//
+//            inferenceButton.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    bar.setVisibility(View.VISIBLE);
+//                    // To prevent Main thread blocking
+//                    new Thread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            try {
+//                                ServerSocket serverSocket = new ServerSocket(5001);
+//
+//
+//                                    // Server socket creation and connection acceptance in the new thread
+//                                    //ServerSocket serverSocket = new ServerSocket(5001);
+//                                    Socket socket = serverSocket.accept();
+//                                    System.out.println("Connection from " + socket + "!");
+//
+//                                    // Call the receiveFile function here
+//                                    File imageFile = receiveFile(socket);
+//
+//                                    System.out.print("Image Received");
+//
+//                                    // Preprocess the image and classify it
+//                                    int predictedClass = classifyImage(updatedModel, imageFile);
+//                                    System.out.println("Predicted class: " + predictedClass);
+//
+//
+//                                    // Send the predicted class back to the client
+//                                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+//                                    out.println(predictedClass);
+//
+//
+//                                    bar.setVisibility(View.INVISIBLE);
+//                                    //socket.close();
+//                                    //serverSocket.close();
+//
+//
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }).start();
+//                }
+//            });
+//        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        protected void onPostExecute(String result) {
+//            super.onPostExecute(result);
+//            // Hide the progress bar now that we are finished
+//            ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
+//            bar.setVisibility(View.INVISIBLE);
+//            text.setText("The accuracy reach the target " + targetAccuracy + "\n" + "It has taken " + trainNum + " times of training iteration");
+//
+//            Button inferenceButton = findViewById(R.id.inferenceButton);
+//
+//            // Make the inference button visible after training
+//            inferenceButton.setVisibility(View.VISIBLE);
+//
+//            inferenceButton.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    bar.setVisibility(View.VISIBLE);
+//                    // To prevent Main thread blocking
+//                    new Thread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            try {
+//                                ServerSocket serverSocket = new ServerSocket(5001);
+//
+//
+//                                // Server socket creation and connection acceptance in the new thread
+//
+//                                Socket socket = serverSocket.accept();
+//                                System.out.println("Connection from " + socket + "!");
+//
+//                                // Call the receiveFile function here
+//                                File imageFile = receiveFile(socket);
+//
+//                                System.out.print("Image Received");
+//
+//                                // Preprocess the image and classify it
+//                                int predictedClass = classifyImage(updatedModel, imageFile);
+//                                System.out.println("Predicted class: " + predictedClass);
+//
+//
+//                                runOnUiThread(() -> bar.setVisibility(View.INVISIBLE));
+////
+//                                socket.close();
+//                                serverSocket.close(); // Close the sockets after sending the response
+//
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }).start();
+//                }
+//            });
+//        }
+
+
+
+
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            // Hide the progress bar now that we are finished
+            final ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
+            bar.setVisibility(View.INVISIBLE);
+            text.setText("The accuracy reach the target " + targetAccuracy + "\n" + "It has taken " + trainNum + " times of training iteration");
+
+            Button inferenceButton = findViewById(R.id.inferenceButton);
+
+            // Make the inference button visible after training
+            inferenceButton.setVisibility(View.VISIBLE);
+
+            inferenceButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    bar.setVisibility(View.VISIBLE);
+                    // To prevent Main thread blocking
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                ServerSocket serverSocket = new ServerSocket(5001);
+                                Socket socket = serverSocket.accept();
+                                System.out.println("Connection from " + socket + "!");
+
+                                // Call the receiveFile function here
+                                System.out.println("About to receive file...");
+                                File imageFile = receiveFile(socket);
+
+                                System.out.println("File received. About to classify image...");
+                                int predictedClass = classifyImage(updatedModel, imageFile);
+
+                                System.out.println("Image classified. About to send response...");
+// Send the predicted class back to the client
+
+                                socket.close();
+
+
+
+                                Socket responseSocket = serverSocket.accept();
+                                OutputStream os = responseSocket.getOutputStream();
+                                PrintWriter writer = new PrintWriter(os, true);
+                                writer.println(predictedClass);
+
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        bar.setVisibility(View.INVISIBLE);
+                                    }
+                                });
+
+                                responseSocket.close();
+                                serverSocket.close();
+
+
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                }
+            });
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        protected void onPostExecute(String result) {
+//            super.onPostExecute(result);
+//            // Hide the progress bar now that we are finished
+//            ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
+//            bar.setVisibility(View.INVISIBLE);
+//            text.setText("The accuracy reach the target " + targetAccuracy + "\n" + "It has taken " + trainNum + " times of training iteration");
+//
+//            Button inferenceButton = findViewById(R.id.inferenceButton);
+//
+//            // Make the inference button visible after training
+//            inferenceButton.setVisibility(View.VISIBLE);
+//
+//            inferenceButton.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    bar.setVisibility(View.VISIBLE);
+//                    // To prevent Main thread blocking
+//                    new Thread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            try {
+//                                ServerSocket serverSocket = new ServerSocket(5001);
+//                                Socket socket = serverSocket.accept();
+//                                System.out.println("Connection from " + socket + "!");
+//
+//                                // Set a timeout on the server socket
+//                                socket.setSoTimeout(5000);
+//
+//                                // Call the receiveFile function here
+//                                File imageFile = receiveFile(socket);
+//
+//                                // Preprocess the image and classify it
+//                                int predictedClass = classifyImage(updatedModel, imageFile);
+//                                System.out.println("Predicted class: " + predictedClass);
+//
+//                                // Send the predicted class back to the client
+//                                DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+//
+//                                //For testing
+//                                System.out.println("Sending predicted class: " + predictedClass);
+//
+//                                try {
+//                                    dos.writeInt(predictedClass); // Send the integer directly
+//                                }catch (IOException e){
+//                                    System.out.println(e);
+//                                }
+//
+//                                bar.setVisibility(View.INVISIBLE);
+//
+//                                try {
+//                                    // This will block until the client reads the data or the timeout occurs
+//                                    System.out.println("Stuck here");
+//                                    socket.getInputStream().read();
+//                                    System.out.println("Stuck here too");
+//                                } catch (IOException e) {
+//                                    // Handle timeout or other I/O exceptions
+//                                    System.out.println("Error reading from client: " + e);
+//                                }
+//
+//                                socket.close();
+//                                serverSocket.close(); // Close the sockets after sending the response
+//
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }).start();
+//                }
+//            });
+//        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        private void receiveFile(Socket socket) {
+//            int bytesRead = 0, current = 0;
+//
+//            try {
+//                DataInputStream din = new DataInputStream(socket.getInputStream());
+//                DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
+//
+//                String name = din.readUTF();
+//                int fileLength = din.readInt();
+//                byte[] byteArray = new byte[fileLength]; // creating byteArray with length same as file length
+//                BufferedInputStream bis = new BufferedInputStream(din);
+//                String basePath = getCacheDir().getAbsolutePath() + "/server";
+//                File file = new File(basePath + "/" + name);
+//
+//                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+//                bytesRead = bis.read(byteArray, 0, byteArray.length); // reads bytes of length byteArray from BufferedInputStream & writes into the byteArray, (Offset 0 and length is of byteArray)
+//                current = bytesRead;
+//
+//                // Sometimes only a portion of the file is read, hence to read the remaining portion...
+//                do {
+//                    // BufferedInputStream is read again into the byteArray, offset is current (which is the amount of bytes read previously) and length is the empty space in the byteArray after current is subtracted from its length
+//                    bytesRead = bis.read(byteArray, current, (byteArray.length - current));
+//                    if (bytesRead >= 0)
+//                        current += bytesRead; // current is updated after the new bytes are read
+//                } while (bytesRead > 0);
+//
+//                bos.write(byteArray, 0, current); // writes bytes from the byteArray into the BufferedOutputStream, offset is 0 and length is current (which is the amount of bytes read into byteArray)
+//                bos.close();
+//
+//                System.out.println("File " + name + " Successfully Downloaded!");
+//                dout.writeInt(0); // writeInt is used to reset if any bytes are present in the buffer after the file transfer
+//            } catch (IOException ex) {
+//                ex.printStackTrace();
+//            }
+//        }
+
+        // Overloaded Method
+//        private void receiveFile(Socket socket) {
+//            try {
+//                // Get the input stream from the socket
+//                InputStream is = socket.getInputStream();
+//                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+//
+//                // Read the Base64 string from the input stream
+//                String imageDataString = reader.readLine();
+//
+//                // Decode the Base64 string into a byte array
+//                byte[] imageData = Base64.decode(imageDataString, Base64.DEFAULT);
+//
+//                // Write the byte array to a file
+//                String basePath = getCacheDir().getAbsolutePath() + "/server";
+//                File file = new File(basePath + "/receivedImage.jpg");
+//                FileOutputStream fos = new FileOutputStream(file);
+//                fos.write(imageData);
+//                fos.close();
+//
+//                System.out.println("Image file received and saved to " + file.getAbsolutePath());
+//            } catch (IOException e) {
+//                System.out.println("Error receiving image: " + e);
+//            }
+//        }
+
+
+
+//        private void receiveFile(Socket socket) {
+//            try {
+//                // Get the input stream from the socket
+//                InputStream is = socket.getInputStream();
+//                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+//
+//                // Read the Base64 string from the input stream
+//                String imageDataString = reader.readLine();
+//
+//                // Decode the Base64 string into a byte array
+//                byte[] imageData = Base64.decode(imageDataString, Base64.DEFAULT);
+//
+//                // Write the byte array to a file
+//                String basePath = getCacheDir().getAbsolutePath() + "/server";
+//                File file = new File(basePath + "/receivedImage.jpg");
+//                FileOutputStream fos = new FileOutputStream(file);
+//                fos.write(imageData);
+//                fos.close();
+//
+//                System.out.println("Image file received and saved to " + file.getAbsolutePath());
+//            } catch (IOException e) {
+//                System.out.println("Error receiving image: " + e);
+//            }
+//        }
+
+
+        private File receiveFile(Socket socket) {
+            try {
+                // Get the input stream from the socket
+                InputStream is = socket.getInputStream();
+
+                // Read the image data directly into a byte array
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                int nRead;
+                byte[] data = new byte[16384];
+                while ((nRead = is.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+
+                buffer.flush();
+                byte[] imageData = buffer.toByteArray();
+
+                // Write the byte array to a file
+                String basePath = getCacheDir().getAbsolutePath() + "/server";
+                File file = new File(basePath + "/receivedImage.jpg");
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.write(imageData);
+                fos.close();
+
+                System.out.println("Image file received and saved to " + file.getAbsolutePath());
+                return file;
+            } catch (IOException e) {
+                System.out.println("Error receiving image: " + e);
+                return null;
+            }
+        }
+
+//        private File receiveFile(Socket socket) throws IOException {
+//            try {
+//                // Get the input stream from the socket
+//                InputStream is = socket.getInputStream();
+//
+//                // Read the image data directly into a byte array
+//                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+//                int nRead;
+//                byte[] data = new byte[16384];
+//                while ((nRead = is.read(data, 0, data.length)) != -1) {
+//                    buffer.write(data, 0, nRead);
+//                }
+//
+//                buffer.flush();
+//                byte[] imageData = buffer.toByteArray();
+//
+//                // Write the byte array to a file
+//                String basePath = getCacheDir().getAbsolutePath() + "/server";
+//                File file = new File(basePath + "/receivedImage.jpg");
+//                FileOutputStream fos = new FileOutputStream(file);
+//                fos.write(imageData);
+//                fos.flush(); // Flush the FileOutputStream
+//                fos.close();
+//
+//                System.out.println("Image file received and saved to " + file.getAbsolutePath());
+//                return file;
+//            } catch (IOException e) {
+//                System.out.println("Error receiving image: " + e);
+//                return null;
+//            }
+//        }
+
+
+
+
+
+
+
+
+
+        private int classifyImage(MultiLayerNetwork myNetwork, File imageFile) throws IOException {
+
+            modelBuildAndTrainAndEval model = new modelBuildAndTrainAndEval();
+
+            // Load the image file into a INDArray
+            NativeImageLoader loader = new NativeImageLoader(model.numRows, model.numColumns, model.channels);
+            INDArray image = loader.asMatrix(imageFile);
+
+            // Preprocess the image
+            DataNormalization scaler = new ImagePreProcessingScaler(0, 1);
+            scaler.transform(image);
+
+            // Pass the preprocessed image through the model
+            INDArray output = myNetwork.output(image);
+
+            // Get the predictions
+            int predictedClass = output.argMax(1).getInt(0);
+
+            return predictedClass;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //// Decryption using Caeser Cipher
 //        public void decryptModelFile(File encryptedModelFile) throws Exception {
@@ -643,6 +1192,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+
+
+
 
     // The class for multithreads of receiving service
     class ServiceReceive implements Runnable {

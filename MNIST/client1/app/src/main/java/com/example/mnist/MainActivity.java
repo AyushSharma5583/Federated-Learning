@@ -1,16 +1,28 @@
 package com.example.mnist;
 
+import android.Manifest;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import org.datavec.api.io.labels.ParentPathLabelGenerator;
 import org.datavec.api.split.FileSplit;
@@ -26,6 +38,8 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.Console;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -34,7 +48,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Random;
@@ -92,6 +110,8 @@ public class MainActivity extends AppCompatActivity {
             17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
 
 
+
+    private static final int IMAGE_PICK_CODE = 1;
 
 
     @Override
@@ -208,18 +228,245 @@ public class MainActivity extends AppCompatActivity {
             super.onProgressUpdate(values);
         }
 
-        //This block executes in UI when background thread finishes
-        //This is where we update the UI with our classification results
-        @Override
+
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            //Hide the progress bar now that we are finished
+            // Hide the progress bar now that we are finished
             ProgressBar bar = (ProgressBar) findViewById(R.id.progressBar);
             bar.setVisibility(View.INVISIBLE);
-            textTime.setText("The time for training is "+ trainTime + "s");
+            textTime.setText("The time for training is " + trainTime + "s");
+            requestReadMediaImagesPermission();
+            Button selectImageButton = findViewById(R.id.selectImageButton); // Initialize button after training
+            selectImageButton.setVisibility(View.VISIBLE); // Make button visible
+            selectImageButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Open image selection dialog or gallery
+                    Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(intent, IMAGE_PICK_CODE); // Request code for image selection
+                }
+            });
         }
 
     }
+
+
+    private static final int REQUEST_CODE_READ_MEDIA_IMAGES = 1;
+    private void requestReadMediaImagesPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQUEST_CODE_READ_MEDIA_IMAGES);
+        } else {
+            // Permission already granted, proceed with image access logic
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_READ_MEDIA_IMAGES) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, proceed with image access logic
+            } else {
+                // Permission denied, inform user or handle the situation accordingly
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == IMAGE_PICK_CODE && resultCode == RESULT_OK) {
+            String imagePath = data.getDataString(); // Get image path from intent
+
+            Log.d("ImagePath", imagePath);
+
+            // Start a new AsyncTask to send the image in the background
+            new SendImageTask(imagePath).execute();
+        }
+    }
+
+
+    private class SendImageTask extends AsyncTask<Void, Void, Void> {
+        private String imagePath;
+        public SendImageTask(String imagePath) {
+            this.imagePath = imagePath;
+        }
+
+
+        protected Void doInBackground(Void... voids) {
+
+            try {
+                Socket socket = new Socket(serverIP, 5001);
+
+                // Check if imagePath is a content URI
+                if (imagePath.startsWith("content://")) {
+                    // Use ContentResolver to open the image data
+                    ContentResolver resolver = getContentResolver();
+                    InputStream inputStream = resolver.openInputStream(Uri.parse(imagePath));
+                    byte[] imageData = new byte[inputStream.available()];
+                    inputStream.read(imageData);
+                    inputStream.close();
+
+                    // Send image data over the socket
+                    OutputStream os = socket.getOutputStream();
+                    os.write(imageData);
+                    os.close();
+
+                } else {
+                    // Existing code for handling regular file paths
+                    FileInputStream imageFile = new FileInputStream(imagePath);
+                    byte[] imageData = new byte[imageFile.available()];
+                    imageFile.read(imageData);
+                    imageFile.close();
+
+                    // Send image data over the socket
+                    OutputStream os = socket.getOutputStream();
+                    os.write(imageData);
+                    os.close();
+
+                }
+
+                socket.close();
+
+                Socket responseSocket = new Socket(serverIP, 5001);
+
+                InputStream is = responseSocket.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                int predictedClass = Integer.parseInt(reader.readLine());
+                System.out.println("Predicted class: " + predictedClass);
+
+                responseSocket.close();
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView textView = findViewById(R.id.predictedClassTextView);
+                        textView.setText("Predicted class: " + predictedClass);
+                        textView.setVisibility(View.VISIBLE);
+                    }
+                });
+
+
+
+            } catch (FileNotFoundException e) {
+                System.out.println("Error: Image file not found at '" + imagePath + "'.");
+            } catch (Exception e) {
+                System.out.println("Error sending image: " + e);
+            }
+            return null;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        protected Void doInBackground(Void... voids) {
+//
+//            int predictedClass = 0;
+//
+//            try {
+//                Socket socket = new Socket(serverIP, 5001);
+//
+//                // Check if imagePath is a content URI
+//                if (imagePath.startsWith("content://")) {
+//                    // Use ContentResolver to open the image data
+//                    ContentResolver resolver = getContentResolver();
+//                    InputStream inputStream = resolver.openInputStream(Uri.parse(imagePath));
+//                    byte[] imageData = new byte[inputStream.available()];
+//                    inputStream.read(imageData);
+//                    inputStream.close();
+//
+//                    // Send image data over the socket
+//                    OutputStream os = socket.getOutputStream();
+//                    os.write(imageData);
+//               //     os.close();
+//                } else {
+//                    // Existing code for handling regular file paths
+//                    FileInputStream imageFile = new FileInputStream(imagePath);
+//                    byte[] imageData = new byte[imageFile.available()];
+//                    imageFile.read(imageData);
+//                    imageFile.close();
+//
+//                    // Send image data over the socket
+//                    OutputStream os = socket.getOutputStream();
+//                    os.write(imageData);
+//                  //  os.close();
+//                }
+//
+//
+//                // Read the predicted class sent by the server
+//                DataInputStream dis = new DataInputStream(socket.getInputStream());
+//
+//                socket.setSoTimeout(5000);
+//
+//                try {
+//                    predictedClass = dis.readInt(); // Read the integer directly
+//                } catch (SocketTimeoutException e) {
+//                    // Handle timeout specifically
+//                    System.out.println("Timeout occurred while waiting for server response.");
+//                    // Consider retrying the communication or providing an appropriate error message
+//                } catch (IOException e) {
+//                    // Handle other I/O exceptions
+//                    System.out.println("Error reading from server: " + e);
+//                    // Handle other potential I/O errors differently
+//                }
+//
+//
+//
+//                // Update the UI with the predicted class on the main thread
+//                int finalPredictedClass = predictedClass;
+//
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        TextView textView = findViewById(R.id.predictionTextView); // Replace with your TextView ID
+//                        textView.setText("Predicted Class: " + finalPredictedClass);
+//                        System.out.println("Predicted Class: " + finalPredictedClass);
+//                        textView.setVisibility(View.VISIBLE);
+//                    }
+//                });
+//
+//                socket.close(); // Close the socket after reading the response
+//            } catch (FileNotFoundException e) {
+//                System.out.println("Error: Image file not found at '" + imagePath + "'.");
+//            } catch (Exception e) {
+//                System.out.println("Error sending image: " + e);
+//            }
+//            return null;
+//        }
+
+
+
+    }
+
+
+
+
 
     // The class for train the model
     // It has two methods. One is load the training data and the other is train the model.
