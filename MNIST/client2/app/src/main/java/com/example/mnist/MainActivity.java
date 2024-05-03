@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     double trainTime;
     TextView textTime;
     TextView textAccuracy;
-    static String serverIP = "192.168.100.3";
+    static String serverIP = "100.74.134.184";
     String trainDataset = "client2_mnist_iid_batch";
 
 

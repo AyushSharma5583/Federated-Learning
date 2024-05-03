@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
     double trainTime;
     TextView textTime;
     TextView textAccuracy;
-    static String serverIP = "192.168.100.3";
+    static String serverIP = "100.74.134.184";
     String trainDataset = "client1_mnist_iid_batch";
 
 
@@ -360,108 +360,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//        protected Void doInBackground(Void... voids) {
-//
-//            int predictedClass = 0;
-//
-//            try {
-//                Socket socket = new Socket(serverIP, 5001);
-//
-//                // Check if imagePath is a content URI
-//                if (imagePath.startsWith("content://")) {
-//                    // Use ContentResolver to open the image data
-//                    ContentResolver resolver = getContentResolver();
-//                    InputStream inputStream = resolver.openInputStream(Uri.parse(imagePath));
-//                    byte[] imageData = new byte[inputStream.available()];
-//                    inputStream.read(imageData);
-//                    inputStream.close();
-//
-//                    // Send image data over the socket
-//                    OutputStream os = socket.getOutputStream();
-//                    os.write(imageData);
-//               //     os.close();
-//                } else {
-//                    // Existing code for handling regular file paths
-//                    FileInputStream imageFile = new FileInputStream(imagePath);
-//                    byte[] imageData = new byte[imageFile.available()];
-//                    imageFile.read(imageData);
-//                    imageFile.close();
-//
-//                    // Send image data over the socket
-//                    OutputStream os = socket.getOutputStream();
-//                    os.write(imageData);
-//                  //  os.close();
-//                }
-//
-//
-//                // Read the predicted class sent by the server
-//                DataInputStream dis = new DataInputStream(socket.getInputStream());
-//
-//                socket.setSoTimeout(5000);
-//
-//                try {
-//                    predictedClass = dis.readInt(); // Read the integer directly
-//                } catch (SocketTimeoutException e) {
-//                    // Handle timeout specifically
-//                    System.out.println("Timeout occurred while waiting for server response.");
-//                    // Consider retrying the communication or providing an appropriate error message
-//                } catch (IOException e) {
-//                    // Handle other I/O exceptions
-//                    System.out.println("Error reading from server: " + e);
-//                    // Handle other potential I/O errors differently
-//                }
-//
-//
-//
-//                // Update the UI with the predicted class on the main thread
-//                int finalPredictedClass = predictedClass;
-//
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        TextView textView = findViewById(R.id.predictionTextView); // Replace with your TextView ID
-//                        textView.setText("Predicted Class: " + finalPredictedClass);
-//                        System.out.println("Predicted Class: " + finalPredictedClass);
-//                        textView.setVisibility(View.VISIBLE);
-//                    }
-//                });
-//
-//                socket.close(); // Close the socket after reading the response
-//            } catch (FileNotFoundException e) {
-//                System.out.println("Error: Image file not found at '" + imagePath + "'.");
-//            } catch (Exception e) {
-//                System.out.println("Error sending image: " + e);
-//            }
-//            return null;
-//        }
-
-
-
     }
 
 
@@ -600,9 +498,6 @@ public class MainActivity extends AppCompatActivity {
 //        // Write encrypted data (including IV) to file
 //        Files.write(modelFile.toPath(), encryptedDataWithIv);
 //    }
-
-
-
 
 
 
