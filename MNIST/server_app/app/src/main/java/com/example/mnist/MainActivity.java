@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String mnistTesturl = "https://github.com/AyushSharma5583/Federated-Learning/blob/main/dataset/mnist_test.tar.gz?raw=true";
 
     TextView text;
-    double targetAccuracy = 0.80;
+    double targetAccuracy = 0.90;
     int trainNum = 0;
     String trainDataset = "mnist_iid";
 
